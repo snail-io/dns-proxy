@@ -1,0 +1,160 @@
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  font-family: -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  background: #0a0a0a;
+  color: #d4d4d4;
+}
+.app { max-width: 1180px; margin: 0 auto; padding: 28px 18px; }
+header {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 12px 0 20px; border-bottom: 1px solid #1f1f1f; margin-bottom: 24px;
+}
+header h1 { font-size: 22px; margin: 0; color: #e5e5e5; }
+header h1 small { color: #737373; font-weight: normal; margin-left: 8px; font-size: 14px; }
+.header-right { display: flex; flex-direction: row; align-items: center; gap: 16px; }
+.status { padding: 6px 12px; background: #141414; border: 1px solid #1f1f1f; border-radius: 6px; font-size: 13px; color: #a3a3a3; }
+.ports-info { font-size: 12px; color: #737373; }
+
+.tabs { display: flex; gap: 8px; margin-bottom: 16px; }
+.tab {
+  background: #141414; border: 1px solid #2a2a2a; color: #a3a3a3;
+  border-radius: 8px; padding: 8px 14px; cursor: pointer; font-size: 13px;
+}
+.tab:hover { color: #e5e5e5; background: #1a1a1a; }
+.tab.active { background: #1d4ed8; border-color: #1d4ed8; color: #fff; }
+.tab-panel { display: block; }
+.tab-panel.hidden { display: none; }
+
+.card {
+  background: #111111; border: 1px solid #1f1f1f; border-radius: 10px;
+  padding: 20px; margin-bottom: 24px;
+}
+.card h2 { margin-top: 0; font-size: 17px; color: #e5e5e5; }
+.card h2 .count { font-size: 12px; color: #737373; font-weight: normal; margin-left: 6px; }
+.card .head {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-bottom: 12px;
+}
+.card .head h2 { margin: 0; }
+.row { display: grid; grid-template-columns: 2fr 1fr 2fr 80px 90px; gap: 10px; align-items: center; }
+.row-hosts { display: grid; grid-template-columns: 2fr 80px 1.3fr 3fr; gap: 10px; align-items: center; margin-bottom: 10px; }
+.row-hosts.hosts-line2 { grid-template-columns: auto 2fr auto auto; }
+.hint { color: #737373; font-size: 12px; margin-top: 10px; }
+input, select, button {
+  background: #1a1a1a; color: #e5e5e5; border: 1px solid #2a2a2a;
+  border-radius: 8px; padding: 9px 12px; font-size: 14px;
+}
+input:focus, select:focus { outline: none; border-color: #3f3f3f; }
+button { background: #1f1f1f; border-color: #2a2a2a; cursor: pointer; color: #e5e5e5; }
+button:hover { background: #2a2a2a; }
+button.primary { background: #1d4ed8; border-color: #1d4ed8; }
+button.primary:hover { background: #1e40af; }
+button.danger { background: #b91c1c; border-color: #b91c1c; color: #fff; }
+button.danger:hover { background: #991b1b; }
+button.ghost { background: #141414; border-color: #2a2a2a; color: #d4d4d4; }
+button.ghost:hover { background: #1f1f1f; }
+.enabled { display: flex; align-items: center; gap: 6px; font-size: 13px; color: #a3a3a3; }
+table { width: 100%; border-collapse: collapse; font-size: 14px; }
+thead th { color: #737373; font-weight: normal; font-size: 12px; text-transform: uppercase; letter-spacing: 0.05em; padding: 10px 8px; text-align: left; border-bottom: 1px solid #1f1f1f; background: #0e0e0e; }
+tbody td { padding: 11px 8px; border-bottom: 1px solid #171717; color: #d4d4d4; }
+tbody tr:hover td { background: #141414; }
+th.col-id   { width: 56px; }
+th.col-dom  { width: auto; }
+th.col-mode { width: 88px; }
+th.col-up   { width: 30%; min-width: 200px; }
+th.col-on   { width: 64px; }
+th.col-op   { width: 210px; white-space: nowrap; }
+td.col-op button + button { margin-left: 6px; }
+.mode-badge {
+  display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 11px;
+  background: #262626; color: #d4d4d4;
+}
+.mode-badge.suffix { background: #065f46; color: #a7f3d0; }
+.mode-badge.exact { background: #7c2d12; color: #fed7aa; }
+@media (max-width: 900px) {
+  .row, .row-hosts { grid-template-columns: 1fr; }
+}
+
+.modal-overlay {
+  position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0, 0, 0, 0.75); z-index: 1000;
+  display: flex; justify-content: center; align-items: center;
+}
+.modal-overlay.hidden { display: none; }
+.modal {
+  background: #111; border: 1px solid #2a2a2a; border-radius: 10px;
+  padding: 24px; min-width: 520px; max-width: 90%; max-height: 90vh;
+  overflow-y: auto; box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
+}
+.modal h3 { margin: 0 0 16px; font-size: 17px; color: #e5e5e5; }
+.modal .form-group { margin-bottom: 14px; }
+.modal .form-group > label {
+  display: block; font-size: 13px; color: #a3a3a3;
+  margin-bottom: 6px;
+}
+.modal .form-group label.enabled {
+  display: flex; align-items: center; gap: 6px;
+  font-size: 14px; color: #d4d4d4;
+  margin-bottom: 0;
+}
+.modal input[type="text"], .modal input[type="number"], .modal select, .modal textarea {
+  width: 100%; background: #1a1a1a; color: #e5e5e5;
+  border: 1px solid #2a2a2a; border-radius: 8px;
+  padding: 10px 12px; font-size: 14px;
+}
+.modal input[type="checkbox"] {
+  width: 18px; height: 18px; background: #1a1a1a; border: 1px solid #2a2a2a;
+  border-radius: 4px; padding: 0; cursor: pointer;
+}
+.modal input:focus, .modal select:focus, .modal textarea:focus {
+  outline: none; border-color: #3f3f3f;
+}
+.modal textarea { resize: vertical; min-height: 60px; }
+.modal .modal-actions {
+  display: flex; justify-content: flex-end; gap: 10px;
+  margin-top: 20px; padding-top: 16px;
+  border-top: 1px solid #1f1f1f;
+}
+.modal .row-edit {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 12px;
+}
+@media (max-width: 600px) {
+  .modal { min-width: 95%; }
+  .modal .row-edit { grid-template-columns: 1fr; }
+}
+
+.auth-form {
+  max-width: 480px;
+  margin: 0;
+}
+.auth-form .form-group {
+  margin-bottom: 14px;
+}
+.auth-form .form-group > label {
+  display: block;
+  font-size: 13px;
+  color: #a3a3a3;
+  margin-bottom: 6px;
+}
+.auth-form input {
+  width: 100%;
+  background: #1a1a1a;
+  color: #e5e5e5;
+  border: 1px solid #2a2a2a;
+  border-radius: 8px;
+  padding: 10px 12px;
+  font-size: 14px;
+}
+.auth-form input:focus {
+  outline: none;
+  border-color: #3f3f3f;
+}
+.auth-form .modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 20px;
+  padding-top: 16px;
+  border-top: 1px solid #1f1f1f;
+}

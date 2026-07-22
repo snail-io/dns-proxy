@@ -1,0 +1,249 @@
+<!doctype html>
+<html lang="zh">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>DNS · 管理</title>
+<link rel="stylesheet" href="/style.css">
+</head>
+<body>
+<div class="app">
+  <header>
+    <h1>DNS Proxy <small>Web 管理</small></h1>
+    <div class="header-right">
+      <div id="portsInfo" class="ports-info">加载中…</div>
+      <span class="status" id="statusBox">加载中…</span>
+    </div>
+  </header>
+
+  <div class="tabs">
+    <button class="tab active" data-tab="rules">规则 · 上游</button>
+    <button class="tab" data-tab="hosts">本地 · 记录</button>
+    <button class="tab" data-tab="settings">账号 · 设置</button>
+  </div>
+
+  <section class="card tab-panel" data-panel="rules">
+    <h2>添加规则</h2>
+    <form id="createForm" class="row">
+      <input name="domain" placeholder="域名 (如 example.com 或 mail.example.com)" required>
+      <select name="mode" required>
+        <option value="suffix">suffix (子域全量)</option>
+        <option value="exact">exact (精确)</option>
+      </select>
+      <input name="upstream" placeholder="上游 host:port 或 DoH URL (如 8.8.8.8:53 / https://dns.com/dns-query)" required>
+      <label class="enabled"><input type="checkbox" name="enabled" checked>启用</label>
+      <button type="submit" class="primary">添加</button>
+    </form>
+  </section>
+
+  <section class="card tab-panel" data-panel="rules">
+    <div class="head">
+      <h2>规则列表 <span class="count" id="count"></span></h2>
+      <button id="reloadBtn" class="ghost">刷新缓存</button>
+    </div>
+    <table>
+      <colgroup>
+        <col style="width:56px">
+        <col style="width:auto">
+        <col style="width:88px">
+        <col style="width:auto">
+        <col style="width:64px">
+        <col style="width:210px">
+      </colgroup>
+      <thead>
+        <tr><th>ID</th><th>域名</th><th>模式</th><th>上游</th><th>启用</th><th>操作</th></tr>
+      </thead>
+      <tbody id="rulesBody"></tbody>
+    </table>
+  </section>
+
+  <section class="card tab-panel hidden" data-panel="hosts">
+    <h2>添加本地 DNS 记录</h2>
+    <form id="createHostForm">
+      <div class="row-hosts">
+        <input name="domain" placeholder="域名 (如 example.com)" required>
+        <select name="type" required>
+          <option value="A">A</option>
+          <option value="AAAA">AAAA</option>
+          <option value="CNAME">CNAME</option>
+          <option value="TXT">TXT</option>
+        </select>
+        <select name="match_mode" required>
+          <option value="exact">精确 (仅该域名)</option>
+          <option value="suffix">后缀 (该域名 + 子域名)</option>
+        </select>
+        <input name="value" placeholder="值 (如 1.2.3.4 / 2001:db8::1 / other.example.com)" required>
+      </div>
+      <div class="row-hosts hosts-line2">
+        <input name="ttl" type="number" min="0" value="300" placeholder="TTL">
+        <input name="comment" placeholder="备注 (可选)">
+        <label class="enabled"><input type="checkbox" name="enabled" checked>启用</label>
+        <button type="submit" class="primary">添加</button>
+      </div>
+    </form>
+    <p class="hint">本地记录优先于转发上游：命中后直接返回，不再发到公共 DNS。支持同一域名多条记录（多个 A / AAAA）。匹配模式：精确 = 仅命中完全相等域名；后缀 = 同时命中该域名及其所有子域名。</p>
+  </section>
+
+  <section class="card tab-panel hidden" data-panel="hosts">
+    <div class="head">
+      <h2>本地记录 <span class="count" id="hostsCount"></span></h2>
+    </div>
+    <table>
+      <colgroup>
+        <col style="width:56px">
+        <col style="width:auto">
+        <col style="width:70px">
+        <col style="width:96px">
+        <col style="width:auto">
+        <col style="width:80px">
+        <col style="width:auto">
+        <col style="width:64px">
+        <col style="width:210px">
+      </colgroup>
+      <thead>
+        <tr><th>ID</th><th>域名</th><th>类型</th><th>匹配</th><th>值</th><th>TTL</th><th>备注</th><th>启用</th><th>操作</th></tr>
+      </thead>
+      <tbody id="hostsBody"></tbody>
+    </table>
+  </section>
+
+  <section class="card tab-panel hidden" data-panel="settings">
+    <h2>修改账号密码</h2>
+    <form id="changeAuthForm" class="auth-form">
+      <div class="form-group">
+        <label>当前用户名</label>
+        <input name="old_user" type="text" placeholder="请输入当前用户名" required>
+      </div>
+      <div class="form-group">
+        <label>当前密码</label>
+        <input name="old_password" type="password" placeholder="请输入当前密码" required>
+      </div>
+      <div class="form-group">
+        <label>新用户名</label>
+        <input name="new_user" type="text" placeholder="请输入新用户名" required>
+      </div>
+      <div class="form-group">
+        <label>新密码</label>
+        <input name="new_password" type="password" placeholder="请输入新密码" required>
+      </div>
+      <div class="modal-actions">
+        <button type="button" onclick="closeAuthModal()">取消</button>
+        <button type="submit" class="primary">保存</button>
+      </div>
+    </form>
+  </section>
+</div>
+<script src="/app.js"></script>
+<script>
+  document.getElementById("createForm").addEventListener("submit", createRule);
+  document.getElementById("createHostForm").addEventListener("submit", createHost);
+  document.getElementById("reloadBtn").addEventListener("click", async () => {
+    await fetch(location.origin + "/api/rules/reload", { method: "POST" });
+    await refresh();
+  });
+
+  document.querySelectorAll(".tab").forEach(btn => {
+    btn.addEventListener("click", () => {
+      document.querySelectorAll(".tab").forEach(b => b.classList.remove("active"));
+      btn.classList.add("active");
+      const name = btn.dataset.tab;
+      document.querySelectorAll(".tab-panel").forEach(p => {
+        p.classList.toggle("hidden", p.dataset.panel !== name);
+      });
+    });
+  });
+
+  async function refresh() {
+    await refreshStatus();
+    await Promise.all([refreshRules(), refreshHosts()]);
+  }
+  refresh();
+</script>
+
+<div id="ruleModal" class="modal-overlay hidden">
+  <div class="modal">
+    <h3>编辑规则</h3>
+    <form id="editRuleForm">
+      <input type="hidden" name="id">
+      <div class="form-group">
+        <label>域名</label>
+        <input name="domain" placeholder="域名" required>
+      </div>
+      <div class="form-group">
+        <label>匹配模式</label>
+        <select name="mode" required>
+          <option value="suffix">suffix (子域全量)</option>
+          <option value="exact">exact (精确)</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>上游</label>
+        <input name="upstream" placeholder="上游 host:port 或 DoH URL" required>
+      </div>
+      <div class="form-group">
+        <label>状态</label>
+        <label class="enabled"><input type="checkbox" name="enabled">启用</label>
+      </div>
+      <div class="modal-actions">
+        <button type="button" onclick="closeModal('ruleModal')">取消</button>
+        <button type="submit" class="primary">保存</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div id="hostModal" class="modal-overlay hidden">
+  <div class="modal">
+    <h3>编辑本地记录</h3>
+    <form id="editHostForm">
+      <input type="hidden" name="id">
+      <div class="form-group">
+        <label>域名</label>
+        <input name="domain" placeholder="域名" required>
+      </div>
+      <div class="form-group">
+        <label>类型</label>
+        <select name="type" required>
+          <option value="A">A</option>
+          <option value="AAAA">AAAA</option>
+          <option value="CNAME">CNAME</option>
+          <option value="TXT">TXT</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>匹配模式</label>
+        <select name="match_mode" required>
+          <option value="exact">精确 (仅该域名)</option>
+          <option value="suffix">后缀 (该域名 + 子域名)</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>值</label>
+        <input name="value" placeholder="值" required>
+      </div>
+      <div class="form-group">
+        <label>TTL</label>
+        <input name="ttl" type="number" min="0" placeholder="TTL">
+      </div>
+      <div class="form-group">
+        <label>备注</label>
+        <textarea name="comment" placeholder="备注"></textarea>
+      </div>
+      <div class="form-group">
+        <label>状态</label>
+        <label class="enabled"><input type="checkbox" name="enabled">启用</label>
+      </div>
+      <div class="modal-actions">
+        <button type="button" onclick="closeModal('hostModal')">取消</button>
+        <button type="submit" class="primary">保存</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+  document.getElementById("editRuleForm").addEventListener("submit", updateRule);
+  document.getElementById("editHostForm").addEventListener("submit", updateHost);
+</script>
+</body>
+</html>
